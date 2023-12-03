@@ -1,6 +1,7 @@
 # FL-on-kubeflow
 A simple example of performing federated learning on kubeflow
-#Part of the code comes from "https://github.com/stijani/tutorial?fbclid=IwAR2AvmE3DzXzuF6MxHuVUaP7_KLyOVIZK679d548jR2Gx4PlXKjZOU_DzuM"
+
+Part of the code comes from "https://github.com/stijani/tutorial?fbclid=IwAR2AvmE3DzXzuF6MxHuVUaP7_KLyOVIZK679d548jR2Gx4PlXKjZOU_DzuM"
 
 ## Description
 Installation
@@ -173,6 +174,8 @@ else:
 ```
 
 It's a url that client's connect to server in kubeflow(k8s). It's defining in k8s service.
+
+In k8s, service's url can use DNS like http://<service-name>:port.
 ```
 server_url="http://http-service:5000/data"
 ```
@@ -245,6 +248,7 @@ server_op=func_to_container_op(server,base_image='tensorflow/tensorflow',package
 client_op=func_to_container_op(client,base_image='tensorflow/tensorflow',packages_to_install=['requests','pandas'])
 ```
 Create the k8s service to let clients can connect to server. To ensure the 'selector'(label) and 'targetPort' are match with server.
+
 ```
 service = dsl.ResourceOp(
     name='http-service',
