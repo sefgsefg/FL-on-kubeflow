@@ -8,6 +8,7 @@ Server
 ---
 We use the "Flask" to make a server.
 First create the list for storing client's upload data and make a dictionary for sharing variable between clients context
+
 You should change "NUM_OF_CLIENTS" number for actual number of clients. This example is 2.
 ```
 app = Flask(__name__)
