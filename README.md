@@ -113,3 +113,57 @@ def shutdown_server():
                 return 'Server shutting down...'
             time.sleep(1)
 ```
+
+
+Client
+---
+This part initializes the dataset you use. In this example we use the hemodialysis information.
+```
+normal_url='<change yourself>' 
+abnormal_url='<change yourself>'
+
+normal_data = pd.read_csv(normal_url)		#init data, you should change method by your own data
+abnormal_data = pd.read_csv(abnormal_url)
+num_features = len(normal_data.columns)
+
+normal_label = np.array([[1, 0]] * len(normal_data))
+abnormal_label = np.array([[0, 1]] * len(abnormal_data))
+
+
+data = np.vstack((normal_data, abnormal_data))
+data_label = np.vstack((normal_label, abnormal_label))
+
+
+shuffler = np.random.permutation(len(data))
+data = data[shuffler]
+data_label = data_label[shuffler]
+
+
+data = data.reshape(len(data), num_features, 1)
+data_label = data_label.reshape(len(data_label), 2)
+
+
+full_data = list(zip(data, data_label))
+data_length=len(full_data)
+```
+The model clients use. You can change your method here.
+```
+class SimpleMLP:
+    @staticmethod
+    def build(shape, classes):
+        model = Sequential()
+        model.add(Conv1D(filters=4, kernel_size=3, input_shape=(17,1)))
+        model.add(MaxPooling1D(3))
+        model.add(Flatten())
+        model.add(Dense(8, activation="relu"))
+        model.add(Dense(2, activation = 'softmax'))
+
+        return model
+```
+This part is not a correct FL code because client should has it's own data. It's a way to get dataset from segment of full dataset.
+```
+if(batch==1):
+    full_data=full_data[0:int(data_length/2)] #batch data
+else:
+    full_data=full_data[int(data_length/2):data_length] #The client should have its own data, not like this. It's a lazy method.
+```
