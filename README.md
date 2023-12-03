@@ -6,14 +6,17 @@ A simple example of performing federated learning on kubeflow
 ---
 Server
 ---
+We use the "Flask" to make a server.
+First create the list for storing client's upload data and make a dictionary for sharing variable between clients context
+You should change "NUM_OF_CLIENTS" number for actual number of clients. This example is 2.
 ```
 app = Flask(__name__)
     clients_local_count = []
     scaled_local_weight_list = []
     global_value = { #Share variable
                     'last_run_statue' : False, #last run finish or not
-                    'data_statue' : None,      #global_count finish or not
-                    'global_count' : None,
+                    'data_statue' : None,      
+                    'global_count' : None,     #global_count finish or not
                     'step' : None,
                     'weight_statue' : None,
                     'average_weights' : None,
