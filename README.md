@@ -173,8 +173,9 @@ else:
     full_data=full_data[int(data_length/2):data_length] #The client should have its own data, not like this. It's a lazy method.
 ```
 
-It's a url that client's connect to server in kubeflow(k8s). It's defining in k8s service.
-In k8s, service's URL is http://&lt;service-name&gt;:port
+It's a url that client's connect to server in kubeflow(k8s).  It's defining in k8s service.
+
+In k8s, service's url is http://&lt;service-name&gt;:port
 ```
 server_url="http://http-service:5000/data"
 ```
