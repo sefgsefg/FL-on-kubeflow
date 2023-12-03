@@ -28,12 +28,14 @@ app = Flask(__name__)
 Create locks to ensure that the server calculation is correct
 ```
 init_lock = threading.Lock()
-    clients_local_count_lock = threading.Lock()
-    scaled_local_weight_list_lock = threading.Lock()
-    cal_weight_lock = threading.Lock()
-    shutdown_lock = threading.Lock()
+clients_local_count_lock = threading.Lock()
+scaled_local_weight_list_lock = threading.Lock()
+cal_weight_lock = threading.Lock()
+shutdown_lock = threading.Lock()
 ```
 In the begining, the first enter client will lock and init the global variable, subsequent clients do not need to do it again.
+
+Then the server will get client's data
 ```
 @app.route('/data', methods=['POST'])
     def flask_server():
@@ -57,5 +59,36 @@ In the begining, the first enter client will lock and init the global variable, 
         local_weight = json.loads(request.form.get('local_weight'))
         local_weight = [np.array(lst) for lst in local_weight]
 ```
+Here is example for locking process.  The first enter client will detect the length of "clients_local_count" equal to NUM_OF_CLIENTS,
+and set "global_value['data_statue'] " to True.  
 
+The subsequent clients will enter "elif" part to prevent doing the same action.
+```
+with clients_local_count_lock:
+            clients_local_count.append(int(local_count))
+            
+with scaled_local_weight_list_lock:
+    while True:
+        
+        if (len(clients_local_count) == NUM_OF_CLIENTS and global_value['data_statue'] != True):
+            global_value['last_run_statue'] = False
+            sum_of_local_count=sum(clients_local_count)
+            
+            
+            global_value['global_count'] = sum_of_local_count     
+            
+            scaling_factor=local_count/global_value['global_count']
+            scaled_weights = scale_model_weights(local_weight, scaling_factor)
+            scaled_local_weight_list.append(scaled_weights)
+            
+            global_value['scale_statue'] = True 
+            global_value['data_statue'] = True
+            break
+        elif (global_value['data_statue'] == True and global_value['scale_statue'] == True):
+            scaling_factor=local_count/global_value['global_count']
+            scaled_weights =scale_model_weights(local_weight, scaling_factor)
+            scaled_local_weight_list.append(scaled_weights)
 
+            break
+        time.sleep(1)
+```
