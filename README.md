@@ -92,3 +92,24 @@ with scaled_local_weight_list_lock:
             break
         time.sleep(1)
 ```
+After finishing calculate the weight, the server has to clear the data to ensure the next FL round is coooect.
+Then return the weight to clients.
+```
+        clients_local_count.clear()
+        scaled_local_weight_list.clear()
+        
+        return jsonify({'result': (global_value['average_weights'])})
+```
+After the all FL rounds finish, the clients will post a signal to server.
+When the number of signal equal to NUM_OF_CLIENTS, the server will shutdown.
+```
+@app.route('/shutdown', methods=['GET'])
+def shutdown_server():
+    global_value['shutdown'] +=1 
+    with shutdown_lock:
+        while True:
+            if(global_value['shutdown'] == NUM_OF_CLIENTS):
+                os._exit(0)
+                return 'Server shutting down...'
+            time.sleep(1)
+```
