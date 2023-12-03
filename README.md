@@ -167,3 +167,31 @@ if(batch==1):
 else:
     full_data=full_data[int(data_length/2):data_length] #The client should have its own data, not like this. It's a lazy method.
 ```
+
+It's a url that client's connect to server in kubeflow(k8s). It's is setting in k8s service.
+```
+server_url="http://http-service:5000/data"
+```
+The FL training begin and the number of round in this example is 5.
+
+First round won't change model weight, but next rounds will use the "avg_weight" from server return.
+After finish fit, client will pack it's information(like local weight) into json format for sending to server.
+```
+for comm_round in range(5):
+    print('The ',comm_round+1, 'round')
+    client_model = smlp_model.build(17, 1)
+    client_model.compile(loss=loss, 
+                  optimizer=optimizer, 
+                  metrics=metrics)
+    
+    if(comm_round == 0):
+        history = client_model.fit(dataset, epochs=50, verbose=1)
+    else:
+        client_model.set_weights(avg_weight)
+        history = client_model.fit(dataset, epochs=50, verbose=1)
+    
+    local_weight = client_model.get_weights()
+    local_weight = [np.array(w).tolist() for w in local_weight]
+    
+    client_data = {"local_count": local_count,'bs': bs, 'local_weight': json.dumps(local_weight)}
+```
