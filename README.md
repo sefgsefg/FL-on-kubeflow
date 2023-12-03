@@ -3,7 +3,11 @@ A simple example of performing federated learning on kubeflow
 #Part of the code comes from "https://github.com/stijani/tutorial?fbclid=IwAR2AvmE3DzXzuF6MxHuVUaP7_KLyOVIZK679d548jR2Gx4PlXKjZOU_DzuM"
 
 ## Description
-
+Installation
+---
+```
+pip install kfp
+```
 Server
 ---
 We use the "Flask" to make a server.
@@ -168,7 +172,7 @@ else:
     full_data=full_data[int(data_length/2):data_length] #The client should have its own data, not like this. It's a lazy method.
 ```
 
-It's a url that client's connect to server in kubeflow(k8s). It's is setting in k8s service.
+It's a url that client's connect to server in kubeflow(k8s). It's defining in k8s service.
 ```
 server_url="http://http-service:5000/data"
 ```
@@ -194,4 +198,116 @@ for comm_round in range(5):
     local_weight = [np.array(w).tolist() for w in local_weight]
     
     client_data = {"local_count": local_count,'bs': bs, 'local_weight': json.dumps(local_weight)}
+```
+
+Then clients will use "request" to send data to server. But clients and server are established at the same time,
+so use "while True" to check the server is already established.
+After return, the client will get "avg_weight for next model fit.
+```
+while True:
+    try:
+        weight = (requests.post(server_url,data=client_data))
+        
+        if weight.status_code == 200:
+            print(f"exist")
+
+            break
+        else:
+            print(f"server error")
+
+    except requests.exceptions.RequestException:
+
+        print(f"not exist")
+        
+    time.sleep(5)
+    
+data = weight.json()
+avg_weight = data.get('result')
+avg_weight = json.loads(avg_weight)
+avg_weight = [np.array(lst) for lst in avg_weight]
+```
+
+When all FL rounds are finish, clients will send shutdown request to server.
+```
+shutdown_url="http://http-service:5000/shutdown"    
+try:
+    response = requests.get(shutdown_url)
+except requests.exceptions.ConnectionError:
+    print('already shutdown')
+```
+
+Pipeline
+---
+
+Transfer the client and server funtion to kubeflow funtion by "func_to_container_op".
+```
+server_op=func_to_container_op(server,base_image='tensorflow/tensorflow',packages_to_install=['flask','pandas'])
+client_op=func_to_container_op(client,base_image='tensorflow/tensorflow',packages_to_install=['requests','pandas'])
+```
+Create the k8s service to let clients can connect to server. To ensure the 'selector'(label) and 'targetPort' are match with server.
+```
+service = dsl.ResourceOp(
+    name='http-service',
+    k8s_resource={
+        'apiVersion': 'v1',
+        'kind': 'Service',
+        'metadata': {
+            'name': 'http-service'
+        },
+        'spec': {
+            'selector': {
+                'app': 'http-service'
+            },
+            'ports': [
+                {
+                    'protocol': 'TCP',
+                    'port': 5000,
+                    'targetPort': 8080
+                }
+            ]
+        }
+    }
+)
+```
+Make the server task and add the labal. To ensure the "label" and the "container_port" are match with service.
+```
+server_task=server_op()
+server_task.add_pod_label('app', 'http-service')
+server_task.add_port(V1ContainerPort(name='my-port', container_port=8080))
+server_task.set_cpu_request('0.2').set_cpu_limit('0.2')
+server_task.after(service)
+```
+Delete the service after server shutdown. Use action="delete".
+```
+    delete_service = dsl.ResourceOp(
+        name='delete-service',
+        k8s_resource={
+            'apiVersion': 'v1',
+            'kind': 'Service',
+            'metadata': {
+                'name': 'http-service'
+            },
+            'spec': {
+                'selector': {
+                    'app': 'http-service'
+                },
+                'ports': [
+                    {
+                        'protocol': 'TCP',
+                        'port': 80,
+                        'targetPort': 8080
+                    }
+                ],
+                'type': 'NodePort'  
+            }
+        },
+        action="delete" #delete
+    ).after(server_task)
+```
+Create clients. In this example is 2 clients.
+```
+client_task_1=client_op(1)
+client_task_1.set_cpu_request('0.2').set_cpu_limit('0.2')
+clienttask_2=client_op(2)
+clienttask_2.set_cpu_request('0.2').set_cpu_limit('0.2')
 ```
