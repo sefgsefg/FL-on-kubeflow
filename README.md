@@ -174,7 +174,7 @@ else:
 ```
 
 It's a url that client's connect to server in kubeflow(k8s). It's defining in k8s service.
-
+>In k8s, service's url is http://<service-name>:port
 ```
 server_url="http://http-service:5000/data"
 ```
