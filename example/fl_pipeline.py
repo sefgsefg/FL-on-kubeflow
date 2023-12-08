@@ -146,7 +146,7 @@ def server():
     app.run(host="0.0.0.0", port=8080)
 
 
-def client(batch:int) -> NamedTuple('Outputs', [("last_accuracy",float)]):
+def client(batch:int) :
     import json
     import requests
     import time
