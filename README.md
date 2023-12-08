@@ -43,26 +43,26 @@ In the begining, the first enter client will lock and init the global variable, 
 Then the server will get client's data
 ```
 @app.route('/data', methods=['POST'])
-    def flask_server():
-        with init_lock:  #check last run is finish and init variable
-            
-            while True:
-                
-                if(len(clients_local_count)==0 and global_value['last_run_statue'] == False):#init the variable by first client enter
-                    global_value['last_run_statue'] = True
-                    global_value['data_statue'] = False
-                    global_value['scale_statue'] = False
-                    global_value['weight_statue'] = False
-                    break
-                
-                elif(global_value['last_run_statue'] == True):
-                    break
-                time.sleep(3)
+def flask_server():
+    with init_lock:  #check last run is finish and init variable
         
-        local_count = int(request.form.get('local_count'))          #get data
-        bs = int(request.form.get('bs'))
-        local_weight = json.loads(request.form.get('local_weight'))
-        local_weight = [np.array(lst) for lst in local_weight]
+        while True:
+            
+            if(len(clients_local_count)==0 and global_value['last_run_statue'] == False):#init the variable by first client enter
+                global_value['last_run_statue'] = True
+                global_value['data_statue'] = False
+                global_value['scale_statue'] = False
+                global_value['weight_statue'] = False
+                break
+            
+            elif(global_value['last_run_statue'] == True):
+                break
+            time.sleep(3)
+    
+    local_count = int(request.form.get('local_count'))          #get data
+    bs = int(request.form.get('bs'))
+    local_weight = json.loads(request.form.get('local_weight'))
+    local_weight = [np.array(lst) for lst in local_weight]
 ```
 Here is example for locking process.  The first enter client will detect the length of "clients_local_count" equal to NUM_OF_CLIENTS,
 and set "global_value['data_statue'] " to True.  
@@ -100,10 +100,10 @@ with scaled_local_weight_list_lock:
 After finishing calculate the weight, the server has to clear the data to ensure the next FL round is coooect.
 Then return the weight to clients.
 ```
-        clients_local_count.clear()
-        scaled_local_weight_list.clear()
-        
-        return jsonify({'result': (global_value['average_weights'])})
+clients_local_count.clear()
+scaled_local_weight_list.clear()
+
+return jsonify({'result': (global_value['average_weights'])})
 ```
 After the all FL rounds finish, the clients will post a signal to server.
 When the number of signal equal to NUM_OF_CLIENTS, the server will shutdown.
