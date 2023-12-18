@@ -6,7 +6,7 @@ Part of the code comes from "https://github.com/stijani/tutorial?fbclid=IwAR2Avm
 ## Description
 Architecture
 ---
-![]([kubeflow_Architecture.png](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/kubeflow_Architecture.png))
+![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/kubeflow_Architecture.png)
 
 Installation
 ---
