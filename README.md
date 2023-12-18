@@ -4,6 +4,10 @@ A simple example of performing federated learning on kubeflow
 Part of the code comes from "https://github.com/stijani/tutorial?fbclid=IwAR2AvmE3DzXzuF6MxHuVUaP7_KLyOVIZK679d548jR2Gx4PlXKjZOU_DzuM"
 
 ## Description
+Architecture
+---
+![]([kubeflow_Architecture.png](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/kubeflow_Architecture.png))
+
 Installation
 ---
 ```
