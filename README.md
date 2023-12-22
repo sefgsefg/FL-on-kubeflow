@@ -325,5 +325,8 @@ clienttask_2=client_op(2)
 clienttask_2.set_cpu_request('0.2').set_cpu_limit('0.2')
 ```
 
+The federated learning pipeline.
+![](https://github.com/sefgsefg/Federated-Learning-on-kubeflow/blob/main/kubeflow_pipeline.png)
+
 Here is the client's log in example output.
 ![](https://github.com/sefgsefg/Federated-Learning-on-kubeflow/blob/main/client_log.png)
