@@ -317,11 +317,13 @@ Delete the service after server shutdown. Use action="delete".
 ```
 Create clients. In this example is 2 clients.
 
-Here is the client's log in example output.
-![](https://github.com/sefgsefg/Federated-Learning-on-kubeflow/blob/main/client_log.png)
+
 ```
 client_task_1=client_op(1)
 client_task_1.set_cpu_request('0.2').set_cpu_limit('0.2')
 clienttask_2=client_op(2)
 clienttask_2.set_cpu_request('0.2').set_cpu_limit('0.2')
 ```
+
+Here is the client's log in example output.
+![](https://github.com/sefgsefg/Federated-Learning-on-kubeflow/blob/main/client_log.png)
