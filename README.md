@@ -16,6 +16,11 @@ Installation
 ```
 pip install kfp
 ```
+Change number of clients
+---
+```
+NUM_OF_CLIENTS = 2 #Custom number of clients
+```
 Server
 ---
 We use the "Flask" to make a server.
@@ -35,7 +40,6 @@ app = Flask(__name__)
                     'average_weights' : None,
                     'shutdown' : 0}
     
-    NUM_OF_CLIENTS = 2 #number of clients
 ```
 Create locks to ensure that the server calculation is correct
 ```
