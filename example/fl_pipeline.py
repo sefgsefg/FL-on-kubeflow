@@ -1,9 +1,13 @@
+from typing import NamedTuple
 import kfp
 from kfp import dsl
 from kfp.components import func_to_container_op
 from kubernetes.client.models import V1ContainerPort
+from kfp.components import InputPath, OutputPath
 
-def server():
+NUM_OF_CLIENTS = 2 #Custom number of clients
+
+def server(NUM_OF_CLIENTS:int):
     import json
     import pandas as pd
     import numpy as np
@@ -26,7 +30,7 @@ def server():
                     'average_weights' : None,
                     'shutdown' : 0}
     
-    NUM_OF_CLIENTS = 2 #number of clients
+    
     
     init_lock = threading.Lock()
     clients_local_count_lock = threading.Lock()
@@ -144,9 +148,50 @@ def server():
     
     
     app.run(host="0.0.0.0", port=8080)
+    
+server_op=func_to_container_op(server,base_image='tensorflow/tensorflow',packages_to_install=['flask','pandas'])
 
+def download_data(log_folder:str,num_of_clients:int)-> NamedTuple('Outputs', [('data', str), ('label', str)]):
+    from typing import NamedTuple
+    import pandas as pd
+    import numpy as np
+    import json
+    import os
+    
+    
+    normal_url='<change yourself>' 
+    abnormal_url='<change yourself>'
 
-def client(batch:int) :
+    normal_data = pd.read_csv(normal_url)
+    abnormal_data = pd.read_csv(abnormal_url)
+
+    num_features = len(normal_data.columns)
+    print(num_features)
+
+    normal_label = np.array([[1, 0]] * len(normal_data))
+    abnormal_label = np.array([[0, 1]] * len(abnormal_data))
+
+    data = np.vstack((normal_data, abnormal_data))
+    data_label = np.vstack((normal_label, abnormal_label))
+
+    shuffler = np.random.permutation(len(data))
+    data = data[shuffler]
+    data_label = data_label[shuffler]
+
+    data = data.reshape(len(data), num_features, 1)
+    label = data_label.reshape(len(data_label), 2)
+
+    np.save(os.path.join(log_folder, 'data.npy'), data)
+    np.save(os.path.join(log_folder, 'label.npy'), label)
+    result = NamedTuple('Outputs', [('data', str), ('label', str)])
+    
+    return result(os.path.join(log_folder, 'data.npy'),
+                    os.path.join(log_folder, 'label.npy'),)
+
+download_data_op = func_to_container_op(download_data,packages_to_install=['pandas','numpy'])
+
+def client(log_folder:str,data_path: str, 
+                label_path: str, batch:int,num_of_clients:int) -> NamedTuple('Outputs', [("last_accuracy",float)]):
     import json
     import requests
     import time
@@ -161,33 +206,29 @@ def client(batch:int) :
     from tensorflow.keras.layers import Dense
     from tensorflow.keras.optimizers import SGD
     from tensorflow.keras import backend as K
+    
+    train_data=np.load(data_path)
+    train_label=np.load(label_path)
+    print(train_data.shape)
+    print(train_label.shape)
+    def split_and_get_batch(data, labels, x, batch_index):
+        
+        batch_size = len(data) // x
 
-    normal_url='<change yourself>' 
-    abnormal_url='<change yourself>'
-    normal_data = pd.read_csv(normal_url)
-    abnormal_data = pd.read_csv(abnormal_url)
-    num_features = len(normal_data.columns)
-    print(num_features)
-    normal_label = np.array([[1, 0]] * len(normal_data))
-    abnormal_label = np.array([[0, 1]] * len(abnormal_data))
-    
-    
-    data = np.vstack((normal_data, abnormal_data))
-    data_label = np.vstack((normal_label, abnormal_label))
+        
+        data_batches = np.array_split(data, x)
+        label_batches = np.array_split(labels, x)
 
-    
-    shuffler = np.random.permutation(len(data))
-    data = data[shuffler]
-    data_label = data_label[shuffler]
+        
+        selected_data_batch = data_batches[batch_index]
+        selected_label_batch = label_batches[batch_index]
 
+        return selected_data_batch, selected_label_batch
     
-    data = data.reshape(len(data), num_features, 1)
-    data_label = data_label.reshape(len(data_label), 2)
-
-   
-    full_data = list(zip(data, data_label))
-    data_length=len(full_data)
-    
+    data,label = split_and_get_batch(train_data,train_label,num_of_clients,batch-1)
+    print(data.shape)
+    print(label.shape)
+    full_data = list(zip(data,label))
     class SimpleMLP:
         @staticmethod
         def build(shape, classes):
@@ -201,10 +242,6 @@ def client(batch:int) :
             return model
     
     
-    if(batch==1):
-        full_data=full_data[0:int(data_length/2)] #batch data
-    else:
-        full_data=full_data[int(data_length/2):data_length] #The client should have its own data, not like this. It's a lazy method.
     
     print('data len= ',len(full_data))
     def batch_data(data_shard, bs=32):
@@ -237,10 +274,10 @@ def client(batch:int) :
                       metrics=metrics)
         
         if(comm_round == 0):
-            history = client_model.fit(dataset, epochs=50, verbose=1)
+            history = client_model.fit(dataset, epochs=1, verbose=1)
         else:
             client_model.set_weights(avg_weight)
-            history = client_model.fit(dataset, epochs=50, verbose=1)
+            history = client_model.fit(dataset, epochs=1, verbose=1)
         
         local_weight = client_model.get_weights()
         local_weight = [np.array(w).tolist() for w in local_weight]
@@ -274,14 +311,58 @@ def client(batch:int) :
         response = requests.get(shutdown_url)
     except requests.exceptions.ConnectionError:
         print('already shutdown')
+    last_accuracy = history.history['accuracy'][-1]
+    print(last_accuracy)
+    return([last_accuracy])
 
-
-server_op=func_to_container_op(server,base_image='tensorflow/tensorflow',packages_to_install=['flask','pandas'])
 client_op=func_to_container_op(client,base_image='tensorflow/tensorflow',packages_to_install=['requests','pandas'])
+
+from typing import List, NamedTuple
+
+def show_results(test_acc: List[float]) -> NamedTuple('Outputs', [('test_accuracy', str)]):
+    
+    result_str = ', '.join(map(str, test_acc))
+    print(result_str)
+    
+    result_str = result_str[:-1]
+    
+    return (result_str,)
+
+show_results_op = func_to_container_op(show_results)
+
+def generate_clients(log_folder,n):# generate the num of clients
+    global vop
+    client_tasks = []
+    download_data_task = download_data_op(log_folder,n)
+    download_data_task.set_cpu_request('0.1').set_cpu_limit('0.1').add_pvolumes({
+        log_folder:vop.volume,
+    })
+    for i in range(n):
+        client_task = globals()['client_task_' + str(i + 1)] = client_op(log_folder, download_data_task.outputs['data'],
+                                        download_data_task.outputs['label'],i + 1,n)
+        client_task.set_cpu_request('0.1').set_cpu_limit('0.1').add_pvolumes({
+        log_folder:vop.volume,
+    })
+        client_tasks.append(client_task)
+    
+    globals()['show_results_task'] = show_results_op([ct.outputs['last_accuracy'] for ct in client_tasks]).set_cpu_request('0.1').set_cpu_limit('0.1')
+
+
 @dsl.pipeline(
     name='FL test'
     )
 def fl_pipeline(namespace='kubeflow-user-thu01'):
+    global NUM_OF_CLIENTS
+    log_folder = '/data'
+    global vop
+    pvc_name = "mypvc"
+    vop = dsl.VolumeOp(
+        name=pvc_name,
+        resource_name="newpvc",
+        size="1Gi",
+        modes=dsl.VOLUME_MODE_RWO
+    )
+    
     
     service = dsl.ResourceOp(
         name='http-service',
@@ -305,16 +386,11 @@ def fl_pipeline(namespace='kubeflow-user-thu01'):
             }
         }
     )#service_end
-    server_task=server_op()
+    server_task=server_op(NUM_OF_CLIENTS)
     server_task.add_pod_label('app', 'http-service')
     server_task.add_port(V1ContainerPort(name='my-port', container_port=8080))
-    server_task.set_cpu_request('0.2').set_cpu_limit('0.2')
+    server_task.set_cpu_request('0.1').set_cpu_limit('0.1')
     server_task.after(service)
-    
-    client_task_1=client_op(1)
-    client_task_1.set_cpu_request('0.2').set_cpu_limit('0.2')
-    clienttask_2=client_op(2)
-    clienttask_2.set_cpu_request('0.2').set_cpu_limit('0.2')
     
     delete_service = dsl.ResourceOp(
         name='delete-service',
@@ -338,9 +414,10 @@ def fl_pipeline(namespace='kubeflow-user-thu01'):
                 'type': 'NodePort'  
             }
         },
-        action="delete" #delete
+        action="delete" #刪除
     ).after(server_task)
-
+    
+    generate_clients(log_folder,NUM_OF_CLIENTS)
 
 
 if __name__ == '__main__':
