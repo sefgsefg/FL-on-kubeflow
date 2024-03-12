@@ -20,10 +20,8 @@ NUM_OF_CLIENTS = 2 #Custom number of clients
 ```
 Server
 ---
-We use the "Flask" to make a server.
-First create the list for storing client's upload data and make a dictionary for sharing variable between clients context
+We use Flask to create a server. Initially, we create a list to store client upload data and make a dictionary for sharing variables between client contexts.
 
-You should change "NUM_OF_CLIENTS" number for actual number of clients. This example is 2.
 ```
 app = Flask(__name__)
     clients_local_count = []
@@ -46,9 +44,7 @@ scaled_local_weight_list_lock = threading.Lock()
 cal_weight_lock = threading.Lock()
 shutdown_lock = threading.Lock()
 ```
-In the begining, the first enter client will lock and init the global variable, subsequent clients do not need to do it again.
-
-Then the server will get client's data
+In the beginning, the first entering client will lock and initialize the global variable; subsequent clients do not need to do it again. Then the server will get clients' data.
 ```
 @app.route('/data', methods=['POST'])
 def flask_server():
@@ -72,8 +68,8 @@ def flask_server():
     local_weight = json.loads(request.form.get('local_weight'))
     local_weight = [np.array(lst) for lst in local_weight]
 ```
-Here is example for locking process.  The first enter client will detect the length of "clients_local_count" equal to NUM_OF_CLIENTS,
-and set "global_value['data_statue'] " to True.  
+Here is an example of the locking process. 
+The first client entering will detect if the length of 'clients_local_count' equals NUM_OF_CLIENTS and set 'global_value['data_status']' to True 
 
 The subsequent clients will enter "elif" part to prevent doing the same action.
 ```
@@ -105,16 +101,14 @@ with scaled_local_weight_list_lock:
             break
         time.sleep(1)
 ```
-After finishing calculate the weight, the server has to clear the data to ensure the next FL round is coooect.
-Then return the weight to clients.
+After finishing the weight calculation, the server has to clear the data to ensure the next FL round is correct. Then return the weights to clients.
 ```
 clients_local_count.clear()
 scaled_local_weight_list.clear()
 
 return jsonify({'result': (global_value['average_weights'])})
 ```
-After the all FL rounds finish, the clients will post a signal to server.
-When the number of signal equal to NUM_OF_CLIENTS, the server will shutdown.
+After all FL rounds have finished, the clients will send a signal to the server. When the number of signals equals NUM_OF_CLIENTS, the server will shut down.
 ```
 @app.route('/shutdown', methods=['GET'])
 def shutdown_server():
@@ -130,7 +124,7 @@ def shutdown_server():
 
 Client
 ---
-This part initializes the dataset you use. In this example we use the hemodialysis information.
+This part initializes the dataset that you use. In this example, we use the hemodialysis information.
 ```
 normal_url='<change yourself>' 
 abnormal_url='<change yourself>'
@@ -159,7 +153,7 @@ data_label = data_label.reshape(len(data_label), 2)
 full_data = list(zip(data, data_label))
 data_length=len(full_data)
 ```
-The model clients use. You can change your method here.
+If necessary, you can modify the method used by the model clients here.
 ```
 class SimpleMLP:
     @staticmethod
@@ -173,7 +167,7 @@ class SimpleMLP:
 
         return model
 ```
-This part is not a correct FL code because client should has it's own data. It's a way to get dataset from segment of full dataset.
+This part is not correct federated learning code because each client should have its own data. Instead, it's a way to obtain a dataset from a subset of the full dataset.
 ```
 if(batch==1):
     full_data=full_data[0:int(data_length/2)] #batch data
@@ -181,16 +175,13 @@ else:
     full_data=full_data[int(data_length/2):data_length] #The client should have its own data, not like this. It's a lazy method.
 ```
 
-It's a url that client's connect to server in kubeflow(k8s).  It's defining in k8s service.
+It's a URL that clients connect to the server in Kubeflow (K8s). It's defined in Kubernetes service.
 
 In k8s, service's url is http://&lt;service-name&gt;:port
 ```
 server_url="http://http-service:5000/data"
 ```
-The FL training begin and the number of round in this example is 5.
-
-First round won't change model weight, but next rounds will use the "avg_weight" from server return.
-After finish fit, client will pack it's information(like local weight) into json format for sending to server.
+The Federated Learning training begins and the number of rounds in this example is 5. In the first round, the model weights remain unchanged, but subsequent rounds will utilize the 'avg_weight' returned by the server. After completing the fitting process, the client will pack its information, such as the local weights, into JSON format for sending to the server.
 ```
 for comm_round in range(5):
     print('The ',comm_round+1, 'round')
@@ -211,9 +202,7 @@ for comm_round in range(5):
     client_data = {"local_count": local_count,'bs': bs, 'local_weight': json.dumps(local_weight)}
 ```
 
-Then clients will use "request" to send data to server. But clients and server are established at the same time,
-so use "while True" to check the server is already established.
-After return, the client will get "avg_weight for next model fit.
+Then the clients will use a 'request' to send data to the server. But the clients and servers are established at the same time, so use a 'while True' loop to continuously check if the server has been established. After receiving a response, the client will obtain the average weight for the next model fitting.
 ```
 while True:
     try:
@@ -238,7 +227,7 @@ avg_weight = json.loads(avg_weight)
 avg_weight = [np.array(lst) for lst in avg_weight]
 ```
 
-When all FL rounds are finish, clients will send shutdown request to server.
+When all FL rounds are finished, clients will send a shutdown request to the server.
 ```
 shutdown_url="http://http-service:5000/shutdown"    
 try:
@@ -250,12 +239,12 @@ except requests.exceptions.ConnectionError:
 Pipeline
 ---
 
-Transfer the client and server funtion to kubeflow funtion by "func_to_container_op".
+Transfer the client and server functions to Kubeflow functions using 'func_to_container_op'.
 ```
 server_op=func_to_container_op(server,base_image='tensorflow/tensorflow',packages_to_install=['flask','pandas'])
 client_op=func_to_container_op(client,base_image='tensorflow/tensorflow',packages_to_install=['requests','pandas'])
 ```
-Create the k8s service to let clients can connect to server. To ensure the 'selector'(label) and 'targetPort' are match with server.
+Create a Kubernetes service to allow clients to connect to the server. Ensure that the 'selector' (label) and 'targetPort' match with the server.
 
 ```
 service = dsl.ResourceOp(
@@ -281,7 +270,7 @@ service = dsl.ResourceOp(
     }
 )
 ```
-Make the server task and add the labal. To ensure the "label" and the "container_port" are match with service.
+Make the server task and add the label. Ensure that the 'label' and the 'container_port' match with the service.
 ```
 server_task=server_op()
 server_task.add_pod_label('app', 'http-service')
