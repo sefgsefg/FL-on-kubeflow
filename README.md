@@ -1,11 +1,8 @@
 # Federated-Learning-on-kubeflow
 A simple example of performing federated learning on kubeflow
 
-Part of the code comes from "https://github.com/stijani/tutorial?fbclid=IwAR2AvmE3DzXzuF6MxHuVUaP7_KLyOVIZK679d548jR2Gx4PlXKjZOU_DzuM"
-
 ## Description
-It's the architecture of simulated real parallel federated learning. The clients will train in parallel data in thier own contaner and send model info to server.
-When get return, clients will set new model's weight and do the next federated learning round.
+It's the architecture of simulated real parallel federated learning. The clients will train in parallel on data in their own container and send model information to the server. When they receive a response, clients will set the new model weights and proceed to the next federated learning round.
 
 Architecture
 ---
