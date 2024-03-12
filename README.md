@@ -24,16 +24,16 @@ We use Flask to create a server. Initially, we create a list to store client upl
 
 ```
 app = Flask(__name__)
-    clients_local_count = []
-    scaled_local_weight_list = []
-    global_value = { #Share variable
-                    'last_run_statue' : False, #last run finish or not
-                    'data_statue' : None,      
-                    'global_count' : None,     #global_count finish or not
-                    'step' : None,
-                    'weight_statue' : None,
-                    'average_weights' : None,
-                    'shutdown' : 0}
+clients_local_count = []
+scaled_local_weight_list = []
+global_value = { #Share variable
+                'last_run_state' : False, #last run finish or not
+                'data_state' : None,      #global_count finish or not
+                'global_count' : None,
+                'scale_state' : None,
+                'weight_state' : None,
+                'average_weights' : None,
+                'shutdown' : 0}
     
 ```
 Create locks to ensure that the server calculation is correct
@@ -48,18 +48,18 @@ In the beginning, the first entering client will lock and initialize the global 
 ```
 @app.route('/data', methods=['POST'])
 def flask_server():
-    with init_lock:  #check last run is finish and init variable
+    with init_lock:  #check last run is finish and init varible
         
         while True:
             
-            if(len(clients_local_count)==0 and global_value['last_run_statue'] == False):#init the variable by first client enter
-                global_value['last_run_statue'] = True
-                global_value['data_statue'] = False
-                global_value['scale_statue'] = False
-                global_value['weight_statue'] = False
+            if(len(clients_local_count)==0 and global_value['last_run_state'] == False):#init the variable by first client enter
+                global_value['last_run_state'] = True
+                global_value['data_state'] = False
+                global_value['scale_state'] = False
+                global_value['weight_state'] = False
                 break
             
-            elif(global_value['last_run_statue'] == True):
+            elif(global_value['last_run_state'] == True):
                 break
             time.sleep(3)
     
@@ -79,8 +79,8 @@ with clients_local_count_lock:
 with scaled_local_weight_list_lock:
     while True:
         
-        if (len(clients_local_count) == NUM_OF_CLIENTS and global_value['data_statue'] != True):
-            global_value['last_run_statue'] = False
+        if (len(clients_local_count) == NUM_OF_CLIENTS and global_value['data_state'] != True):
+            global_value['last_run_state'] = False
             sum_of_local_count=sum(clients_local_count)
             
             
@@ -90,10 +90,10 @@ with scaled_local_weight_list_lock:
             scaled_weights = scale_model_weights(local_weight, scaling_factor)
             scaled_local_weight_list.append(scaled_weights)
             
-            global_value['scale_statue'] = True 
-            global_value['data_statue'] = True
+            global_value['scale_state'] = True 
+            global_value['data_state'] = True
             break
-        elif (global_value['data_statue'] == True and global_value['scale_statue'] == True):
+        elif (global_value['data_state'] == True and global_value['scale_state'] == True):
             scaling_factor=local_count/global_value['global_count']
             scaled_weights =scale_model_weights(local_weight, scaling_factor)
             scaled_local_weight_list.append(scaled_weights)
