@@ -322,3 +322,8 @@ The federated learning pipeline.
 
 Here is the client's log in example output.
 ![](https://github.com/sefgsefg/Federated-Learning-on-kubeflow/blob/main/client_log.png)
+
+
+Reference
+---
+https://github.com/stijani/tutorial?fbclid=IwAR2AvmE3DzXzuF6MxHuVUaP7_KLyOVIZK679d548jR2Gx4PlXKjZOU_DzuM
