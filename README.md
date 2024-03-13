@@ -1,8 +1,8 @@
 # Federated-Learning-on-kubeflow
-A simple example of performing federated learning on kubeflow
+A sample code of the federated learning with kubeflow pipeline
 
 ## Description
-It's the architecture of simulated real parallel federated learning. The clients will train in parallel on data in their own container and send model information to the server. When they receive a response, clients will set the new model weights and proceed to the next federated learning round.
+The architecture of the simulated federated learning is as follows. The clients will train on data in parallel in their own container and send model parameters information to the server. The federated learning works by a round table procedure where each client submits its training results to the server in each unit epoch.  The server sums up the separate model parameters to form a new model.  The new model is then passed on to each client residing on different local container.  When they receive a response from server, clients will set the new model weights and proceed to the next federated learning round.
 
 Architecture
 ---
@@ -20,7 +20,7 @@ NUM_OF_CLIENTS = 2 #Custom number of clients
 ```
 Server
 ---
-We use Flask to create a server. Initially, we create a list to store client upload data and make a dictionary for sharing variables between client contexts.
+We use Flask to create a server. Initially, we create a list to store upload data from clients and make a dictionary for sharing variables between client contexts.
 
 ```
 app = Flask(__name__)
@@ -44,7 +44,7 @@ scaled_local_weight_list_lock = threading.Lock()
 cal_weight_lock = threading.Lock()
 shutdown_lock = threading.Lock()
 ```
-In the beginning, the first entering client will lock and initialize the global variable; subsequent clients do not need to do it again. Then the server will get clients' data.
+In the beginning, the first entering client will lock and initialize the global variable; subsequent clients do not need to do it again. Then the server will start receiving clients' data.
 ```
 @app.route('/data', methods=['POST'])
 def flask_server():
@@ -327,3 +327,4 @@ Here is the client's log in example output.
 Reference
 ---
 https://github.com/stijani/tutorial?fbclid=IwAR2AvmE3DzXzuF6MxHuVUaP7_KLyOVIZK679d548jR2Gx4PlXKjZOU_DzuM
+
