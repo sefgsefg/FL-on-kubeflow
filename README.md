@@ -6,7 +6,7 @@ The architecture of the simulated federated learning is as follows. The clients 
 
 Architecture
 ---
-![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/kubeflow_Architecture.png)
+![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/kubeflow_Architecture_v2.png)
 
 Installation
 ---
