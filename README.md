@@ -8,7 +8,8 @@ Architecture
 ---
 ![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/kubeflow_Architecture_v2.png)
 
-Architecture
+
+Federated-Learning process
 ---
 ![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/FL_flow%20chart.png)
 
