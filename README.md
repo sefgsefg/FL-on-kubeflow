@@ -10,7 +10,7 @@ Architecture
 
 Architecture
 ---
-![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/FL_flow chart.png.png)
+![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/FL_flow%20chart.png)
 
 Installation
 ---
