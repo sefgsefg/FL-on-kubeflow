@@ -8,6 +8,10 @@ Architecture
 ---
 ![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/kubeflow_Architecture_v2.png)
 
+Architecture
+---
+![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/FL_flow chart.png.png)
+
 Installation
 ---
 ```
