@@ -11,7 +11,7 @@ Architecture
 
 Federated-Learning process
 ---
-![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/FL_flow%20chart.png)
+![](https://github.com/sefgsefg/FL-on-kubeflow/blob/main/FL_flow_chart.png)
 
 Installation
 ---
