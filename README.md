@@ -1,4 +1,4 @@
-# Federated-Learning-on-kubeflow
+# Horizontal-Federated-Learning-on-kubeflow
 A sample code of the federated learning with kubeflow pipeline
 
 ## Description
