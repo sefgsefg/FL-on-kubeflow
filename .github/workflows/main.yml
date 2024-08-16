@@ -10,6 +10,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Print current working directory
+        run: pwd
+
+      - name: List directory contents
+        run: ls -la
+  
       - name: Grant execute permissions to scripts
         run: |
           chmod +x ./scripts/deploy/github/build-images.sh
