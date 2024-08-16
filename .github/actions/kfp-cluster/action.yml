@@ -11,7 +11,11 @@ runs:
         kubectl_version: v1.29.2
         version: v0.22.0
         node_image: kindest/node:v1.29.2
+    - name: Set execute permissions for scripts
+      shell: bash
+      run: chmod +x ./scripts/deploy/github/build-images.sh
 
+        
     - name: Build images
       shell: bash
       run: ./scripts/deploy/github/build-images.sh
