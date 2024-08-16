@@ -1,11 +1,6 @@
 name: k8s execution tests
 
 on:
-  push:
-    branches: 
-      - master
-      - '**' # 這個會讓它在所有分支上觸發
-
   workflow_dispatch: # 手動觸發工作流程
 
 jobs:
