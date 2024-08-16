@@ -1,6 +1,5 @@
 name: "Set up KFP on KinD"
 description: "Step to start and configure KFP on KinD"
-
 runs:
   using: "composite"
   steps:
@@ -11,21 +10,25 @@ runs:
         kubectl_version: v1.29.2
         version: v0.22.0
         node_image: kindest/node:v1.29.2
-
+    
     - name: Print current working directory
-        run: pwd
-
+      shell: bash
+      run: pwd
+    
     - name: List directory contents
-        run: ls -la
+      shell: bash
+      run: ls -la
+    
     - name: Set execute permissions for scripts
       shell: bash
-      run: chmod +x ./scripts/deploy/github/build-images.sh
-
+      run: |
+        chmod +x ./scripts/deploy/github/build-images.sh
+        chmod +x ./scripts/deploy/github/deploy-kfp.sh
         
     - name: Build images
       shell: bash
       run: ./scripts/deploy/github/build-images.sh
-
+    
     - name: Deploy KFP
       shell: bash
       run: ./scripts/deploy/github/deploy-kfp.sh
