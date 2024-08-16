@@ -2,14 +2,11 @@ name: k8s execution tests
 
 on:
   push:
-    branches: [master]
+    branches: 
+      - master
+      - '**' # 這個會讓它在所有分支上觸發
 
-  pull_request:
-    paths:
-      - '.github/workflows/kfp-kubernetes-execution-tests.yml'
-      - 'sdk/python/**'
-      - 'api/v2alpha1/**'
-      - 'kubernetes_platform/**'
+  workflow_dispatch: # 手動觸發工作流程
 
 jobs:
   kfp-kubernetes-execution-tests:
